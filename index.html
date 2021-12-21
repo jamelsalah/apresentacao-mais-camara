@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide</title>
+    <style>
+        body{
+            background-color: black;
+            display: flex;
+            flex-direction: row;
+        }
+        #screen{
+            border: 5px solid blue;
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            bottom: 0px;
+            left: 0px;
+            margin: auto;
+            width: 800px;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="screen"></canvas>
+
+    <script>
+        const screen = document.getElementById('screen');
+        const ctx = screen.getContext('2d');
+        screen.width = 900;
+        screen.height = 600;
+
+        const state = {
+            lines: [{a: {x: 140, y: 220}, b: {x: 300, y: 500}, init:{x: 80,y: 220}, final:{x: 400, y: 520}} ,],
+            animatedObjects: [{x: null, y: null, w: 30, h: 30, anim: 0},],
+        }
+
+        function updateObjects() {
+            function getCubicBezierXYatPercent(startPt,controlPt1,controlPt2,endPt,percent){
+                var x=CubicN(percent,startPt.x,controlPt1.x,controlPt2.x,endPt.x);
+                var y=CubicN(percent,startPt.y,controlPt1.y,controlPt2.y,endPt.y);
+                return({x:x,y:y});
+            }
+
+            function CubicN(pct, a,b,c,d) {
+                var t2 = pct * pct;
+                var t3 = t2 * pct;
+                return a + (-a * 3 + pct * (3 * a - a * pct)) * pct
+                + (3 * b + pct * (-6 * b + b * 3 * pct)) * pct
+                + (c * 3 - c * 3 * pct) * t2
+                + d * t3;
+            }
+
+            setInterval(() => {
+                for(let i in state.animatedObjects) {
+                    const object = state.animatedObjects[i]
+                    if(object.anim >= 0.95) {
+                        object.anim = 0;
+                        object.w = 30;
+                        object.h = 30;
+                    } else if(object.anim >= 0.75) {
+                        object.anim += 0.025;
+                        object.w -= 2.5
+                        object.h -= 2.5
+                    } else {
+                        object.anim += 0.025;
+                    }
+
+                    let line = state.lines[i]
+                    let cords = getCubicBezierXYatPercent(line.init, line.a, line.b, line.final, object.anim)
+                    object.x = cords.x;
+                    object.y = cords.y;
+                }
+            }, 50);
+        }
+
+        updateObjects()
+
+        setInterval(() => {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, screen.width, screen.height);
+
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(40, 200, 40, 40);
+            ctx.fillRect(400, 500, 40, 40);
+
+            ctx.fillStyle = 'black'
+
+            function renderLines() {
+                for(let i in state.lines) {
+                    const line = state.lines[i];
+                    ctx.beginPath();
+                    ctx.moveTo(line.init.x ,line.init.y);
+                    ctx.bezierCurveTo(line.a.x, line.a.y, line.b.x, line.b.y, line.final.x, line.final.y);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(line.a.x, line.a.y, 10, 0, 2 * Math.PI);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(line.b.x, line.b.y, 10, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+            }
+
+            function renderAnimatedObjects() {
+                for(let i in state.animatedObjects) {
+                    const object = state.animatedObjects[i]
+                    ctx.fillRect(object.x, object.y, object.w, object.h);
+                }
+            }
+
+            renderLines()
+            renderAnimatedObjects()
+        }, 20)
+    </script>
+</body>
+</html>
